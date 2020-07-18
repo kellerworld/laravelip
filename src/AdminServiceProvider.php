@@ -1,6 +1,6 @@
 <?php
 
-namespace Le\Laravelip;
+namespace Kellerworld\Laravelip;
 
 use Illuminate\Support\ServiceProvider;
 
