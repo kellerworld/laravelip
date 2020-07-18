@@ -1,0 +1,22 @@
+{
+    "name": "kellerworld/laravelip",
+    "description": "ip",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "aididiao",
+            "email": "zhangle0403@126.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "le\\laravelip\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "le\\laravelip\\tests\\": "tests/"
+        }
+    }
+}
