@@ -11,12 +11,12 @@
     "require": {},
     "autoload": {
         "psr-4": {
-            "Kellerworld\\laravelip\\": "src/Kellerworld/Laravelip/"
+            "Kellerworld\\Laravelip\\": "src/Kellerworld/Laravelip/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Kellerworld\\laravelip\\tests\\": "tests/"
+            "Kellerworld\\Laravelip\\tests\\": "tests/"
         }
     }
 }
