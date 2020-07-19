@@ -4,19 +4,19 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "aididiao",
-            "email": "zhangle0403@126.com"
+            "name": "kellerworld",
+            "email": "aididiaomail@gmail.com"
         }
     ],
     "require": {},
     "autoload": {
         "psr-4": {
-            "le\\laravelip\\": "src/"
+            "Kellerworld\\laravelip\\": "src/Kellerworld/Laravelip/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "le\\laravelip\\tests\\": "tests/"
+            "Kellerworld\\laravelip\\tests\\": "tests/"
         }
     }
 }
