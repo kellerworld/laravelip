@@ -4,7 +4,7 @@ namespace Kellerworld\Laravelip;
 
 class Admin
 {
-    public function printRunning()
+    public static function printRunning()
     {
         echo 'running';
     }
