@@ -47,28 +47,74 @@ class CheckIP
      * 否则，加黑名单，并记录
      */
     public static function isNonUS($request){
+        foreach ($request->headers as $k=> $v) {
+            if ($k == 'user-agent')
+            {
+                $browser = $v[0];
+                break;
+            }
+        }
+        foreach ((array)($request->request) as $key => $val){
+            $request_data=json_encode($val);
+        }
         $RequestIP=new RequestIP();
         $ip=$RequestIP->createFromGlobals()->getClientIp();
 //        $ip='124.133.163.112';
-        $reader = new Reader('/home/www-data/geodatabase/GeoLite2-Country.mmdb');
-        $country_isoCode=$reader->country($ip)->country->isoCode;
+        //本地文件数据库
+//        $reader = new Reader('D:\GeoLite2-Country.mmdb');
+//        $country_isoCode=$reader->country($ip)->country->isoCode;
         //record request for future analysis
+
+
+        $result=DB::table('geolite2_country_blocks_ipv4')->where('network', 'like', substr($ip , 0 , strpos($ip, '.')+1).'%')->get();
+        foreach ($result as $val){
+            if(self::ip_in_network($ip, $val->network))
+            {
+                $country=DB::table('geolite2_country_locations_en')->where('geoname_id',$val->geoname_id)->select('country_iso_code','country_name')->get();
+                break;
+            }
+        }
         DB::table('exception_request')->insert(
             [
                 'ip' => $ip,
                 'url' => $request->fullUrl(),
                 'method' =>$request->getMethod(),
+                'request_data' =>$request_data,
+                'browser' =>$browser,
+                'country_iso_code' =>$country[0]->country_iso_code,
+                'country_name' =>$country[0]->country_name,
                 'created_at' => date('Y-m-d H:i:s',time()),
                 'updated_at' => date('Y-m-d H:i:s',time())
             ]
         );
-        if($country_isoCode!=='US')
+        if($country[0]->country_iso_code!=='US' && DB::table('blacklist')->where('ip',$ip)->count()==0)
         {
             self::addBlacklist($ip);
         }
 //        $country=$reader->country('124.133.163.112');
 //
 //        return $country_isoCode;
+    }
+    /**
+     * 判断IP是否在某个网络内
+     * @param $ip
+     * @param $network
+     * @return bool
+     */
+
+    public static function ip_in_network($ip, $network)
+    {
+        $ip = (double) (sprintf("%u", ip2long($ip)));
+        $s = explode('/', $network);
+        $network_start = (double) (sprintf("%u", ip2long($s[0])));
+        $network_len = pow(2, 32 - $s[1]);
+        $network_end = $network_start + $network_len - 1;
+
+        if ($ip >= $network_start && $ip <= $network_end)
+        {
+            return true;
+        }
+        return false;
     }
 }
 
