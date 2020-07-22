@@ -50,7 +50,7 @@ class CheckIP
         $RequestIP=new RequestIP();
         $ip=$RequestIP->createFromGlobals()->getClientIp();
 //        $ip='124.133.163.112';
-        $reader = new Reader('/home/www-data/GeoLite2-Country.mmdb');
+        $reader = new Reader('/home/www-data/geodatabase/GeoLite2-Country.mmdb');
         $country_isoCode=$reader->country($ip)->country->isoCode;
         //record request for future analysis
         DB::table('exception_request')->insert(
