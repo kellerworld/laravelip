@@ -43,14 +43,14 @@ class Exception extends Ex
 				margin-bottom: 40px;
 			}
 			.link_contac{font-size:48px;}
-			.link_contac > a{border-bottom:1px solid #000;}
+			.link_contac > a{border-bottom:1px solid #2cbbff;font-weight: bold;}
 		</style>
 	</head>
 	<body>
 	<div class="container">
 		<div class="content">
 			<div class="title">An error occurred in responding to your request.</div>
-			<div class="title link_contac">Please <a href="https://www.happymangocredit.com/contact.html" style="color:#333;text-decoration:none; !important;">contact us</a>. </div>
+			<div class="title link_contac">Please <a href="https://www.happymangocredit.com/contact.html" style="color:#2cbbff;text-decoration:none; !important;">contact us</a>. </div>
 			</div>
 		</div>
 	</body>

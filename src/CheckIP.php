@@ -88,24 +88,44 @@ class CheckIP
                 break;
             }
         }
-        DB::table('exception_request')->insert(
-            [
-                'ip' => $ip,
-                'url' => $request->fullUrl(),
-                'method' =>$request->getMethod(),
-                'request_data' =>$request_data,
-                'browser' =>$browser,
-                'country_iso_code' =>isset($country[0]->country_iso_code) ? $country[0]->country_iso_code : 'Unmatched',
-                'country_name' =>isset($country[0]->country_name) ? $country[0]->country_name : 'Unmatched',
-                'site_id' =>isset($site_ids[$prefix]) ? $site_ids[$prefix] : 0,
-                'created_at' => date('Y-m-d H:i:s',time()),
-                'updated_at' => date('Y-m-d H:i:s',time())
-            ]
-        );
-        if($country[0]->country_iso_code!=='US' && DB::table('blacklist')->where('ip',$ip)->count()==0 && $request->getMethod() != 'get')
-        {
-            self::addBlacklist($ip);
+        if($country[0]->country_iso_code=='US'){
+            DB::table('exception_request')->insert(
+                [
+                    'ip' => $ip,
+                    'url' => $request->fullUrl(),
+                    'method' =>$request->getMethod(),
+                    'request_data' =>$request_data,
+                    'browser' =>$browser,
+                    'country_iso_code' =>isset($country[0]->country_iso_code) ? $country[0]->country_iso_code : 'Unmatched',
+                    'country_name' =>isset($country[0]->country_name) ? $country[0]->country_name : 'Unmatched',
+                    'site_id' =>isset($site_ids[$prefix]) ? $site_ids[$prefix] : 0,
+                    'created_at' => date('Y-m-d H:i:s',time()),
+                    'updated_at' => date('Y-m-d H:i:s',time())
+                ]
+            );
+        }else{
+            if($request->getMethod() != 'get'){
+                DB::table('exception_request')->insert(
+                    [
+                        'ip' => $ip,
+                        'url' => $request->fullUrl(),
+                        'method' =>$request->getMethod(),
+                        'request_data' =>$request_data,
+                        'browser' =>$browser,
+                        'country_iso_code' =>isset($country[0]->country_iso_code) ? $country[0]->country_iso_code : 'Unmatched',
+                        'country_name' =>isset($country[0]->country_name) ? $country[0]->country_name : 'Unmatched',
+                        'site_id' =>isset($site_ids[$prefix]) ? $site_ids[$prefix] : 0,
+                        'created_at' => date('Y-m-d H:i:s',time()),
+                        'updated_at' => date('Y-m-d H:i:s',time())
+                    ]
+                );
+                if($country[0]->country_iso_code!=='US' && DB::table('blacklist')->where('ip',$ip)->count()==0)
+                {
+                    self::addBlacklist($ip);
+                }
+            }
         }
+
 //        $country=$reader->country('124.133.163.112');
 //
 //        return $country_isoCode;
