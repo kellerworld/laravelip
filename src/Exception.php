@@ -42,7 +42,7 @@ class Exception extends Ex
 				font-size: 72px;
 				margin-bottom: 40px;
 			}
-			.link_contac{font-size:48px;}
+			.link_contac{font-size:48px;color:#2cbbff;}
 			.link_contac > a{border-bottom:1px solid #2cbbff;font-weight: bold;}
 		</style>
 	</head>
@@ -101,7 +101,7 @@ class Exception extends Ex
 				font-size: 72px;
 				margin-bottom: 40px;
 			}
-			.link_contac{font-size:48px;}
+			.link_contac{font-size:48px;color:#2cbbff;}
 			.link_contac > a{border-bottom:1px solid #000;}
 		</style>
 	</head>
