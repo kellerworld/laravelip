@@ -58,14 +58,28 @@ class CheckIP
             $request_data=json_encode($val);
         }
         $RequestIP=new RequestIP();
-        $ip=$RequestIP->createFromGlobals()->getClientIp();
-//        $ip='124.133.163.112';
+//        $ip=$RequestIP->createFromGlobals()->getClientIp();
+        $ip='124.133.163.112';
         //本地文件数据库
 //        $reader = new Reader('D:\GeoLite2-Country.mmdb');
 //        $country_isoCode=$reader->country($ip)->country->isoCode;
         //record request for future analysis
-
-
+        $host=$request->getHost();
+        $prefix=substr($host , 0 , strpos($host, '.'));
+        $site_ids=[
+            'advisor' =>1,
+            'qa-advisor' =>1,
+            'demo-advisor' =>1,
+            'institution' =>2,
+            'qa-institution' =>2,
+            'demo-institution' =>2,
+            'user' =>3,
+            'qa' =>3,
+            'demo' =>3,
+            'mango' => 4,
+            'qa-mango' => 4,
+            'demo-mango' =>4
+        ];
         $result=DB::table('geolite2_country_blocks_ipv4')->where('network', 'like', substr($ip , 0 , strpos($ip, '.')+1).'%')->get();
         foreach ($result as $val){
             if(self::ip_in_network($ip, $val->network))
@@ -81,13 +95,14 @@ class CheckIP
                 'method' =>$request->getMethod(),
                 'request_data' =>$request_data,
                 'browser' =>$browser,
-                'country_iso_code' =>$country[0]->country_iso_code,
-                'country_name' =>$country[0]->country_name,
+                'country_iso_code' =>isset($country[0]->country_iso_code) ? $country[0]->country_iso_code : 'Unmatched',
+                'country_name' =>isset($country[0]->country_name) ? $country[0]->country_name : 'Unmatched',
+                'site_id' =>isset($site_ids[$prefix]) ? $site_ids[$prefix] : 0,
                 'created_at' => date('Y-m-d H:i:s',time()),
                 'updated_at' => date('Y-m-d H:i:s',time())
             ]
         );
-        if($country[0]->country_iso_code!=='US' && DB::table('blacklist')->where('ip',$ip)->count()==0)
+        if($country[0]->country_iso_code!=='US' && DB::table('blacklist')->where('ip',$ip)->count()==0 && $request->getMethod() != 'get')
         {
             self::addBlacklist($ip);
         }
