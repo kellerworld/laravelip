@@ -8,9 +8,7 @@
             "email": "aididiaomail@gmail.com"
         }
     ],
-    "require": {
-//        "geoip2/geoip2":"~2.0"
-    },
+    "require": {},
     "autoload": {
         "psr-4": {
             "Kellerworld\\Laravelip\\": "src/"
