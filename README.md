@@ -5,7 +5,7 @@
 
     1)use Kellerworld\Laravelip\CheckIP;
     2)在render方法中添加 
-        CheckIP::isNonUS($request);
+        CheckIP::isNonUS($request,$exception);
 3、app\Http\Controllers\Controller.php
 
     1)use Kellerworld\Laravelip\CheckIP;

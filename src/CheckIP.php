@@ -46,7 +46,7 @@ class CheckIP
      * 属于，则放行
      * 否则，加黑名单，并记录
      */
-    public static function isNonUS($request){
+    public static function isNonUS($request,$exception){
         foreach ($request->headers as $k=> $v) {
             if ($k == 'user-agent')
             {
@@ -57,6 +57,11 @@ class CheckIP
         foreach ((array)($request->request) as $key => $val){
             $request_data=json_encode($val);
         }
+        foreach ((array)($exception) as $key => $val){
+            $status_code=$val;
+            break;
+        }
+//        var_dump($status_code);die;
         $RequestIP=new RequestIP();
 //        $ip=$RequestIP->createFromGlobals()->getClientIp();
         $ip='124.133.163.112';
@@ -88,7 +93,7 @@ class CheckIP
                 break;
             }
         }
-        if($country[0]->country_iso_code=='US'){
+        if($request->getMethod() != 'get' && $request->getMethod() != 'GET'){
             DB::table('exception_request')->insert(
                 [
                     'ip' => $ip,
@@ -96,6 +101,7 @@ class CheckIP
                     'method' =>$request->getMethod(),
                     'request_data' =>$request_data,
                     'browser' =>$browser,
+                    'status_code' =>$status_code,
                     'country_iso_code' =>isset($country[0]->country_iso_code) ? $country[0]->country_iso_code : 'Unmatched',
                     'country_name' =>isset($country[0]->country_name) ? $country[0]->country_name : 'Unmatched',
                     'site_id' =>isset($site_ids[$prefix]) ? $site_ids[$prefix] : 0,
@@ -103,28 +109,12 @@ class CheckIP
                     'updated_at' => date('Y-m-d H:i:s',time())
                 ]
             );
-        }else{
-            if($request->getMethod() != 'get'){
-                DB::table('exception_request')->insert(
-                    [
-                        'ip' => $ip,
-                        'url' => $request->fullUrl(),
-                        'method' =>$request->getMethod(),
-                        'request_data' =>$request_data,
-                        'browser' =>$browser,
-                        'country_iso_code' =>isset($country[0]->country_iso_code) ? $country[0]->country_iso_code : 'Unmatched',
-                        'country_name' =>isset($country[0]->country_name) ? $country[0]->country_name : 'Unmatched',
-                        'site_id' =>isset($site_ids[$prefix]) ? $site_ids[$prefix] : 0,
-                        'created_at' => date('Y-m-d H:i:s',time()),
-                        'updated_at' => date('Y-m-d H:i:s',time())
-                    ]
-                );
-                if($country[0]->country_iso_code!=='US' && DB::table('blacklist')->where('ip',$ip)->count()==0)
-                {
-                    self::addBlacklist($ip);
-                }
+            if($country[0]->country_iso_code!=='US' && DB::table('blacklist')->where('ip',$ip)->count()==0)
+            {
+                self::addBlacklist($ip);
             }
         }
+
 
 //        $country=$reader->country('124.133.163.112');
 //
