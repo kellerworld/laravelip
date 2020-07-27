@@ -63,8 +63,8 @@ class CheckIP
         }
 //        var_dump($status_code);die;
         $RequestIP=new RequestIP();
-//        $ip=$RequestIP->createFromGlobals()->getClientIp();
-        $ip='124.133.163.112';
+        $ip=$RequestIP->createFromGlobals()->getClientIp();
+//        $ip='124.133.163.112';
         //本地文件数据库
 //        $reader = new Reader('D:\GeoLite2-Country.mmdb');
 //        $country_isoCode=$reader->country($ip)->country->isoCode;
