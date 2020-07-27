@@ -47,6 +47,7 @@ class CheckIP
      * 否则，加黑名单，并记录
      */
     public static function isNonUS($request,$exception){
+        self::checkIP();
         foreach ($request->headers as $k=> $v) {
             if ($k == 'user-agent')
             {
@@ -86,15 +87,22 @@ class CheckIP
             'demo-mango' =>4
         ];
         $result=DB::table('geolite2_country_blocks_ipv4')->where('network', 'like', substr($ip , 0 , strpos($ip, '.')+1).'%')->get();
-        foreach ($result as $val){
-            if(self::ip_in_network($ip, $val->network))
-            {
-                $country=DB::table('geolite2_country_locations_en')->where('geoname_id',$val->geoname_id)->select('country_iso_code','country_name')->get();
-                break;
+        if(count($result)>0){
+            foreach ($result as $val){
+                if(self::ip_in_network($ip, $val->network))
+                {
+                    $country=DB::table('geolite2_country_locations_en')->where('geoname_id',$val->geoname_id)->select('country_iso_code','country_name')->get();
+                    $country_iso_code=$country[0]->country_iso_code;
+                    $country_name=$country[0]->country_name;
+                    break;
+                }
             }
+        }else{
+            $country_iso_code=$country_name='Unmatched';
         }
+
         if($request->getMethod() != 'get' && $request->getMethod() != 'GET'){
-            DB::table('exception_request')->insert(
+            $info=DB::table('exception_request')->insert(
                 [
                     'ip' => $ip,
                     'url' => $request->fullUrl(),
@@ -102,16 +110,19 @@ class CheckIP
                     'request_data' =>$request_data,
                     'browser' =>$browser,
                     'status_code' =>$status_code,
-                    'country_iso_code' =>isset($country[0]->country_iso_code) ? $country[0]->country_iso_code : 'Unmatched',
-                    'country_name' =>isset($country[0]->country_name) ? $country[0]->country_name : 'Unmatched',
+                    'country_iso_code' =>$country_iso_code,
+                    'country_name' =>$country_name,
                     'site_id' =>isset($site_ids[$prefix]) ? $site_ids[$prefix] : 0,
                     'created_at' => date('Y-m-d H:i:s',time()),
                     'updated_at' => date('Y-m-d H:i:s',time())
                 ]
             );
-            if($country[0]->country_iso_code!=='US' && DB::table('blacklist')->where('ip',$ip)->count()==0)
+            if($country_iso_code!=='US' && DB::table('blacklist')->where('ip',$ip)->count()==0)
             {
                 self::addBlacklist($ip);
+            }
+            if($country_iso_code!=='US'){
+                throw new Exception('package report:alert exception.');
             }
         }
 
