@@ -57,6 +57,7 @@ class CheckIP
         }
         foreach ((array)($request->request) as $key => $val){
             $request_data=json_encode($val);
+            break;
         }
         foreach ((array)($exception) as $key => $val){
             $status_code=$val;
