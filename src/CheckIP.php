@@ -19,8 +19,6 @@ class CheckIP
         $ip=$RequestIP->createFromGlobals()->getClientIp();
 //        $ip='124.133.163.112';
         $list = DB::table('blacklist')->where('ip', $ip)->get();
-        //        var_dump(DB::getQueryLog());
-//        var_dump(DB::getQueryLog());
 
         if (count($list) != 0) {
             //---------throw a exception
