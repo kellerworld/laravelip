@@ -59,6 +59,10 @@ class CheckIP
             }
         }
         foreach ((array)($request->request) as $key => $val){
+            if(isset($val['password']))
+            {
+                $val['password']='*****';
+            }
             $request_data=json_encode($val);
             break;
         }
