@@ -18,4 +18,9 @@
         "kellerworld/laravelip": "dev-master",
         ... 
     }
+6、.env  
+    定义全局变量SITE_ID，COUNTRY_LIST
+    
+    SITE_ID=5 
+    COUNTRY_LIST=US,DO              
 5、执行：composer require kellerworld/laravelip              
