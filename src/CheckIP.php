@@ -123,7 +123,7 @@ class CheckIP
                     'updated_at' => date('Y-m-d H:i:s',time())
                 ]
             );
-            if($country_iso_code!=='US' && DB::table('blacklist')->where('ip',$ip)->count()==0)
+            if($country_iso_code!=='US' && $country_iso_code!=='DO' && DB::table('blacklist')->where('ip',$ip)->count()==0)
             {
                 self::addBlacklist($ip);
             }
