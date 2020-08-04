@@ -18,9 +18,11 @@
         "kellerworld/laravelip": "dev-master",
         ... 
     }
-6、.env  
+5、.env  
     定义全局变量SITE_ID，COUNTRY_LIST
     
     SITE_ID=5 
-    COUNTRY_LIST=US,DO              
-5、执行：composer require kellerworld/laravelip              
+    COUNTRY_LIST=US,DO            
+6、新增config文件：checkip.php
+
+7、执行：composer require kellerworld/laravelip              

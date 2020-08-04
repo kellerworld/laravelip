@@ -50,7 +50,8 @@ class CheckIP
      * 否则，加黑名单，并记录
      */
     public static function isNonUS($request,$exception){
-        $country_list=explode(',',env('COUNTRY_LIST'));
+        $site_id=config('checkip.site_id');
+        $country_list=explode(',',config('checkip.country_list'));
         self::checkIP();
         foreach ($request->headers as $k=> $v) {
             if ($k == 'user-agent')
@@ -67,10 +68,8 @@ class CheckIP
             $status_code=$val;
             break;
         }
-//        var_dump($status_code);die;
         $RequestIP=new RequestIP();
         $ip=$RequestIP->createFromGlobals()->getClientIp();
-//        $ip='124.133.163.112';
         //本地文件数据库
 //        $reader = new Reader('D:\GeoLite2-Country.mmdb');
 //        $country_isoCode=$reader->country($ip)->country->isoCode;
@@ -91,7 +90,7 @@ class CheckIP
         }else{
             $country_iso_code=$country_name='Unmatched';
         }
-
+//        var_dump($status_code);die;
         if($request->getMethod() != 'get' && $request->getMethod() != 'GET'){
             $info=DB::table('exception_request')->insert(
                 [
@@ -103,7 +102,7 @@ class CheckIP
                     'status_code' =>$status_code,
                     'country_iso_code' =>$country_iso_code,
                     'country_name' =>$country_name,
-                    'site_id' =>env('SITE_ID'),
+                    'site_id' =>$site_id,
                     'created_at' => date('Y-m-d H:i:s',time()),
                     'updated_at' => date('Y-m-d H:i:s',time())
                 ]
@@ -116,11 +115,6 @@ class CheckIP
                 throw new Exception('package report:alert exception.');
             }
         }
-
-
-//        $country=$reader->country('124.133.163.112');
-//
-//        return $country_isoCode;
     }
     /**
      * 判断IP是否在某个网络内
