@@ -109,9 +109,6 @@ class CheckIP
                     'updated_at' => date('Y-m-d H:i:s',time())
                 ]
             );
-            if(DB::table('blacklist')->where('ip',$ip)->count()!=0){
-                DB::table('blacklist')->where('ip',$_POST['ip'])->increment('times');
-            }
             if(!in_array($country_iso_code,$country_list) && DB::table('blacklist')->where('ip',$ip)->count()==0)
             {
                 self::addBlacklist($ip);
