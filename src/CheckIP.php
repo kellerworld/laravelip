@@ -24,7 +24,6 @@ class CheckIP
 
         if (count($list) != 0) {
             //---------throw a exception
-            DB::table('blacklist')->where('ip',$ip)->increment('times');
             throw new Exception('package report:ip is in blacklist.');
         }
 
@@ -38,6 +37,7 @@ class CheckIP
             DB::table('blacklist')->insert(
                 [
                     'ip' => $ip,
+                    'times' => 1,
                     'created_at' => date('Y-m-d H:i:s', time()),
                     'updated_at' => date('Y-m-d H:i:s', time())
                 ]
