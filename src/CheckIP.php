@@ -24,6 +24,7 @@ class CheckIP
 
         if (count($list) != 0) {
             //---------throw a exception
+            DB::table('blacklist')->where('ip',$ip)->increment('times');
             throw new Exception('package report:ip is in blacklist.');
         }
 
