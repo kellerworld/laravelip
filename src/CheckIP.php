@@ -71,6 +71,10 @@ class CheckIP
             {
                 $val['repeatpwd']='*****';
             }
+            if(isset($val['password_confirmation']))
+            {
+                $val['password_confirmation']='*****';
+            }
             $request_data=json_encode($val);
             break;
         }
