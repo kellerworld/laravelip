@@ -63,6 +63,14 @@ class CheckIP
             }
         }
         foreach ((array)($request->request) as $key => $val){
+            if(isset($val['password']))
+            {
+                $val['password']='*****';
+            }
+            if(isset($val['repeatpwd']))
+            {
+                $val['repeatpwd']='*****';
+            }
             $request_data=json_encode($val);
             break;
         }
