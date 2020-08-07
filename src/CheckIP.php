@@ -44,6 +44,7 @@ class CheckIP
                 ]
             );
         }
+        throw new Exception('package report:ip black.');
     }
     /*
      * 在/app/Exceptions/Handler.php中调用此方法
@@ -52,9 +53,9 @@ class CheckIP
      * 否则，加黑名单，并记录
      */
     public static function isNonUS($request,$exception){
+        self::checkIP();
         $site_id=config('checkip.site_id');
         $country_list=explode(',',config('checkip.country_list'));
-        self::checkIP();
         foreach ($request->headers as $k=> $v) {
             if ($k == 'user-agent')
             {
@@ -106,27 +107,44 @@ class CheckIP
         }
 //        var_dump($status_code);die;
         if($request->getMethod() != 'get' && $request->getMethod() != 'GET'){
-            $info=DB::table('exception_request')->insert(
-                [
-                    'ip' => $ip,
-                    'url' => $request->fullUrl(),
-                    'method' =>$request->getMethod(),
-                    'request_data' =>$request_data,
-                    'browser' =>$browser,
-                    'status_code' =>$status_code,
-                    'country_iso_code' =>$country_iso_code,
-                    'country_name' =>$country_name,
-                    'site_id' =>$site_id,
-                    'created_at' => date('Y-m-d H:i:s',time()),
-                    'updated_at' => date('Y-m-d H:i:s',time())
-                ]
-            );
+            json_decode($exception->getMessage ());
+            if(json_last_error() == JSON_ERROR_NONE && $site_id==3){
+                DB::table('exception_request')->insert(
+                    [
+                        'ip' => $ip,
+                        'url' => $request->fullUrl(),
+                        'method' =>$request->getMethod(),
+                        'request_data' =>$request_data,
+                        'browser' =>$browser,
+                        'status_code' =>$status_code,
+                        'country_iso_code' =>$country_iso_code,
+                        'country_name' =>$country_name,
+                        'site_id' =>$site_id,
+                        'status' =>1,
+                        'created_at' => date('Y-m-d H:i:s',time()),
+                        'updated_at' => date('Y-m-d H:i:s',time())
+                    ]
+                );
+            }else{
+                DB::table('exception_request')->insert(
+                    [
+                        'ip' => $ip,
+                        'url' => $request->fullUrl(),
+                        'method' =>$request->getMethod(),
+                        'request_data' =>$request_data,
+                        'browser' =>$browser,
+                        'status_code' =>$status_code,
+                        'country_iso_code' =>$country_iso_code,
+                        'country_name' =>$country_name,
+                        'site_id' =>$site_id,
+                        'created_at' => date('Y-m-d H:i:s',time()),
+                        'updated_at' => date('Y-m-d H:i:s',time())
+                    ]
+                );
+            }
             if(!in_array($country_iso_code,$country_list) && DB::table('blacklist')->where('ip',$ip)->count()==0)
             {
                 self::addBlacklist($ip);
-            }
-            if(!in_array($country_iso_code,$country_list)){
-                throw new Exception('package report:alert exception.');
             }
         }
     }
