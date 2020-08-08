@@ -141,10 +141,10 @@ class CheckIP
                         'updated_at' => date('Y-m-d H:i:s',time())
                     ]
                 );
-            }
-            if(!in_array($country_iso_code,$country_list) && DB::table('blacklist')->where('ip',$ip)->count()==0)
-            {
-                self::addBlacklist($ip);
+                if(!in_array($country_iso_code,$country_list) && DB::table('blacklist')->where('ip',$ip)->count()==0)
+                {
+                    self::addBlacklist($ip);
+                }
             }
         }
     }
