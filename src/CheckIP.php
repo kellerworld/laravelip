@@ -56,6 +56,9 @@ class CheckIP
         self::checkIP();
         $site_id=config('checkip.site_id');
         $country_list=explode(',',config('checkip.country_list'));
+        $browser='null';
+        $country_iso_code='null';
+        $country_name='null';
         foreach ($request->headers as $k=> $v) {
             if ($k == 'user-agent')
             {
@@ -92,8 +95,6 @@ class CheckIP
         $host=$request->getHost();
         $prefix=substr($host , 0 , strpos($host, '.'));
         $result=DB::table('geolite2_country_blocks_ipv4')->where('network', 'like', substr($ip , 0 , strpos($ip, '.')+1).'%')->get();
-        $country_iso_code='null';
-        $country_name='null';
         if(count($result)>0){
             foreach ($result as $val){
                 if(self::ip_in_network($ip, $val->network))
