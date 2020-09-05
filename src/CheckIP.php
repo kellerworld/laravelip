@@ -25,6 +25,7 @@ class CheckIP
         if (count($list) != 0) {
             //---------throw a exception
             DB::table('blacklist')->where('ip',$ip)->increment('times');
+            if(config('checkip.THROWOUT'))
             throw new Exception('package report:ip is in blacklist.');
         }
 
@@ -44,6 +45,7 @@ class CheckIP
                 ]
             );
         }
+        if(config('checkip.THROWOUT'))
         throw new Exception('package report:ip black.');
     }
     /*
