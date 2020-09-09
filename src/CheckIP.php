@@ -111,6 +111,8 @@ class CheckIP
             $country_iso_code=$country_name='Unmatched';
         }
 //        var_dump($status_code);die;
+        if(strpos($request->fullUrl(),'happymangocredit')!== false && $status_code ==0)
+        {}else{
         if($request->getMethod() != 'get' && $request->getMethod() != 'GET'){
             json_decode($exception->getMessage ());
             if(json_last_error() == JSON_ERROR_NONE && $site_id==3){
@@ -151,6 +153,7 @@ class CheckIP
                     self::addBlacklist($ip);
                 }
             }
+        }
         }
     }
     /**
