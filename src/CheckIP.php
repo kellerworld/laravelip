@@ -26,7 +26,7 @@ class CheckIP
             //---------throw a exception
             DB::table('blacklist')->where('ip',$ip)->increment('times');
             if(config('checkip.THROWOUT'))
-            throw new Exception('package report:ip is in blacklist.');
+                throw new Exception('package report:ip is in blacklist.');
         }
 
     }
@@ -46,7 +46,7 @@ class CheckIP
             );
         }
         if(config('checkip.THROWOUT'))
-        throw new Exception('package report:ip black.');
+            throw new Exception('package report:ip black.');
     }
     /*
      * 在/app/Exceptions/Handler.php中调用此方法
@@ -84,10 +84,21 @@ class CheckIP
             $request_data=json_encode($val);
             break;
         }
+        $status_code=-1;
         foreach ((array)($exception) as $key => $val){
-            $status_code=$val;
-            break;
+            if(strpos($key,'statusCode')!==false)
+            {
+                $status_code=$val;
+            }
+
         }
+        //log start
+        $file  = '/tmp/checkIP.log';//要写入文件的文件名（可以是任意文件名），如果文件不存在，将会创建一个
+        $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
+//        $content .= "exception:".json_encode((array)$exception)."\n";
+        $content .= "status code:".$status_code."\n".$request;
+        file_put_contents($file, $content,FILE_APPEND);
+        //log end
         $RequestIP=new RequestIP();
         $ip=$RequestIP->createFromGlobals()->getClientIp();
         //本地文件数据库
@@ -111,49 +122,53 @@ class CheckIP
             $country_iso_code=$country_name='Unmatched';
         }
 //        var_dump($status_code);die;
+        if(is_object($status_code)){
+            $status_code_str=json_encode($status_code，JSON_FORCE_OBJECT);
+            $request_data=$request_data.'--object:'.$status_code_str;
+        }
         if(strpos($request->fullUrl(),'happymangocredit')!== false && $status_code ==0)
         {}else{
-        if($request->getMethod() != 'get' && $request->getMethod() != 'GET'){
-            json_decode($exception->getMessage ());
-            if(json_last_error() == JSON_ERROR_NONE && $site_id==3){
-                DB::table('exception_request')->insert(
-                    [
-                        'ip' => $ip,
-                        'url' => $request->fullUrl(),
-                        'method' =>$request->getMethod(),
-                        'request_data' =>$request_data,
-                        'browser' =>$browser,
-                        'status_code' =>$status_code,
-                        'country_iso_code' =>$country_iso_code,
-                        'country_name' =>$country_name,
-                        'site_id' =>$site_id,
-                        'status' =>1,
-                        'created_at' => date('Y-m-d H:i:s',time()),
-                        'updated_at' => date('Y-m-d H:i:s',time())
-                    ]
-                );
-            }else{
-                DB::table('exception_request')->insert(
-                    [
-                        'ip' => $ip,
-                        'url' => $request->fullUrl(),
-                        'method' =>$request->getMethod(),
-                        'request_data' =>$request_data,
-                        'browser' =>$browser,
-                        'status_code' =>$status_code,
-                        'country_iso_code' =>$country_iso_code,
-                        'country_name' =>$country_name,
-                        'site_id' =>$site_id,
-                        'created_at' => date('Y-m-d H:i:s',time()),
-                        'updated_at' => date('Y-m-d H:i:s',time())
-                    ]
-                );
-                if(!in_array($country_iso_code,$country_list) && DB::table('blacklist')->where('ip',$ip)->count()==0)
-                {
-                    self::addBlacklist($ip);
+            if($request->getMethod() != 'get' && $request->getMethod() != 'GET'){
+                json_decode($exception->getMessage ());
+                if(json_last_error() == JSON_ERROR_NONE && $site_id==3){
+                    DB::table('exception_request')->insert(
+                        [
+                            'ip' => $ip,
+                            'url' => $request->fullUrl(),
+                            'method' =>$request->getMethod(),
+                            'request_data' =>$request_data,
+                            'browser' =>$browser,
+                            'status_code' =>$status_code,
+                            'country_iso_code' =>$country_iso_code,
+                            'country_name' =>$country_name,
+                            'site_id' =>$site_id,
+                            'status' =>1,
+                            'created_at' => date('Y-m-d H:i:s',time()),
+                            'updated_at' => date('Y-m-d H:i:s',time())
+                        ]
+                    );
+                }else{
+                    DB::table('exception_request')->insert(
+                        [
+                            'ip' => $ip,
+                            'url' => $request->fullUrl(),
+                            'method' =>$request->getMethod(),
+                            'request_data' =>$request_data,
+                            'browser' =>$browser,
+                            'status_code' =>$status_code,
+                            'country_iso_code' =>$country_iso_code,
+                            'country_name' =>$country_name,
+                            'site_id' =>$site_id,
+                            'created_at' => date('Y-m-d H:i:s',time()),
+                            'updated_at' => date('Y-m-d H:i:s',time())
+                        ]
+                    );
+                    if(!in_array($country_iso_code,$country_list) && DB::table('blacklist')->where('ip',$ip)->count()==0)
+                    {
+                        self::addBlacklist($ip);
+                    }
                 }
             }
-        }
         }
     }
     /**
