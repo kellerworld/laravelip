@@ -23,7 +23,7 @@ class CheckIP
             //---------throw a exception
             DB::table('blacklist')->where('ip',$ip)->increment('times');
             //log start
-            $file  = './tmp/throwout.log';
+            $file  = '/tmp/throwout.log';
             $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
             $content .= "SiteID:".config('checkip.site_id')."\n";
             file_put_contents($file, $content,FILE_APPEND);
@@ -50,7 +50,7 @@ class CheckIP
             if(config('checkip.THROWOUT'))
             {
                 //log start
-                $file  = './tmp/throwout.log';
+                $file  = '/tmp/throwout.log';
                 $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
                 $content .= "addBlacklist():true----SiteID:".config('checkip.site_id')."\n";
                 file_put_contents($file, $content,FILE_APPEND);
@@ -61,7 +61,7 @@ class CheckIP
                     ->where('id', $id)
                     ->update(['status' => 1]);
                 //log start
-                $file  = './tmp/throwout.log';
+                $file  = '/tmp/throwout.log';
                 $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
                 $content .= "addBlacklist():false----SiteID:".config('checkip.site_id')."\n";
                 file_put_contents($file, $content,FILE_APPEND);
@@ -180,7 +180,7 @@ class CheckIP
 
         }
         //log start
-        $file  = './tmp/checkIP.log';
+        $file  = '/tmp/checkIP.log';
         $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
         $content .= "exception:".json_encode((array)$exception)."\n";
         $content .= "status code:".$status_code."\n".$request;
