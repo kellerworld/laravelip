@@ -22,17 +22,14 @@ class CheckIP
         if (count($list) != 0) {
             //---------throw a exception
             DB::table('blacklist')->where('ip',$ip)->increment('times');
-//            if(config('checkip.THROWOUT'))
-//            {
-                //log start
-                $file  = '/tmp/throwout.log';
-                $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
-                $content .= "checkIP()----SiteID:".config('checkip.site_id')."\n";
-                file_put_contents($file, $content,FILE_APPEND);
-                //log end
+            //log start
+            $file  = './tmp/throwout.log';
+            $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
+            $content .= "SiteID:".config('checkip.site_id')."\n";
+            file_put_contents($file, $content,FILE_APPEND);
+            //log end
 
-                throw new Exception('package report:ip is in blacklist.');
-//            }
+            throw new Exception('package report:ip is in blacklist.');
         }
 
     }
@@ -53,20 +50,89 @@ class CheckIP
             if(config('checkip.THROWOUT'))
             {
                 //log start
-                $file  = '/tmp/throwout.log';
+                $file  = './tmp/throwout.log';
                 $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
                 $content .= "addBlacklist():true----SiteID:".config('checkip.site_id')."\n";
                 file_put_contents($file, $content,FILE_APPEND);
                 //log end
                 throw new Exception('package report:ip black.');
             }else{
+                DB::table('exception_request')
+                    ->where('id', $id)
+                    ->update(['status' => 1]);
                 //log start
-                $file  = '/tmp/throwout.log';
+                $file  = './tmp/throwout.log';
                 $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
                 $content .= "addBlacklist():false----SiteID:".config('checkip.site_id')."\n";
                 file_put_contents($file, $content,FILE_APPEND);
                 //log end
             }
+        }
+    }
+    public static function exceptionType($e){
+        switch($e){
+            case ($e instanceof HttpException):
+                return 'HttpException';
+                break;
+            case ($e instanceof HttpResponseException):
+                return 'HttpResponseException';
+                break;
+            case ($e instanceof NotFoundHttpException):
+                return 'NotFoundHttpException';
+                break;
+            case ($e instanceof AccessDeniedHttpException):
+                return 'AccessDeniedHttpException';
+                break;
+            case ($e instanceof BadRequestHttpException):
+                return 'BadRequestHttpException';
+                break;
+            case ($e instanceof ConflictHttpException):
+                return 'ConflictHttpException';
+                break;
+            case ($e instanceof ControllerDoesNotReturnResponseException):
+                return 'ControllerDoesNotReturnResponseException';
+                break;
+            case ($e instanceof GoneHttpException):
+                return 'GoneHttpException';
+                break;
+            case ($e instanceof HttpExceptionInterface):
+                return 'HttpExceptionInterface';
+                break;
+            case ($e instanceof LengthRequiredHttpException):
+                return 'LengthRequiredHttpException';
+                break;
+            case ($e instanceof MethodNotAllowedHttpException):
+                return 'MethodNotAllowedHttpException';
+                break;
+            case ($e instanceof NotAcceptableHttpException):
+                return 'NotAcceptableHttpException';
+                break;
+            case ($e instanceof PreconditionFailedHttpException):
+                return 'PreconditionFailedHttpException';
+                break;
+            case ($e instanceof PreconditionRequiredHttpException):
+                return 'PreconditionRequiredHttpException';
+                break;
+            case ($e instanceof ServiceUnavailableHttpException):
+                return 'ServiceUnavailableHttpException';
+                break;
+            case ($e instanceof TooManyRequestsHttpException):
+                return 'TooManyRequestsHttpException';
+                break;
+            case ($e instanceof UnauthorizedHttpException):
+                return 'UnauthorizedHttpException';
+                break;
+            case ($e instanceof UnprocessableEntityHttpException):
+                return 'UnprocessableEntityHttpException';
+                break;
+            case ($e instanceof UnsupportedMediaTypeHttpException):
+                return 'UnsupportedMediaTypeHttpException';
+                break;
+            case ($e instanceof \Exception):
+                return 'Exception1';
+                break;
+            default:
+                return 'Not sure Exception';
         }
     }
     /*
@@ -114,7 +180,7 @@ class CheckIP
 
         }
         //log start
-        $file  = '/tmp/checkIP.log';
+        $file  = './tmp/checkIP.log';
         $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
         $content .= "exception:".json_encode((array)$exception)."\n";
         $content .= "status code:".$status_code."\n".$request;
@@ -152,28 +218,27 @@ class CheckIP
         }
         if($request->getMethod() != 'get' && $request->getMethod() != 'GET'){
 //                json_decode($exception->getMessage ());
-//                if(json_last_error() == JSON_ERROR_NONE && $site_id==3){
-//                }
-                $id=DB::table('exception_request')->insertGetId(
-                    [
-                        'ip' => $ip,
-                        'url' => $request->fullUrl(),
-                        'method' =>$request->getMethod(),
-                        'request_data' =>$request_data,
-                        'browser' =>$browser,
-                        'status_code' =>$status_code,
-                        'country_iso_code' =>$country_iso_code,
-                        'country_name' =>$country_name,
-                        'site_id' =>$site_id,
-                        'exception_type' =>self::exceptionType($e),
-                        'created_at' => date('Y-m-d H:i:s',time()),
-                        'updated_at' => date('Y-m-d H:i:s',time())
-                    ]
-                );
-                if(!in_array($country_iso_code,$country_list))
-                {
-                    self::addBlacklist($ip,$id);
-                }
+//                if(json_last_error() == JSON_ERROR_NONE && $site_id==3){      }
+            $id=DB::table('exception_request')->insertGetId(
+                [
+                    'ip' => $ip,
+                    'url' => $request->fullUrl(),
+                    'method' =>$request->getMethod(),
+                    'request_data' =>$request_data,
+                    'browser' =>$browser,
+                    'status_code' =>$status_code,
+                    'country_iso_code' =>$country_iso_code,
+                    'country_name' =>$country_name,
+                    'site_id' =>$site_id,
+                    'exception_type' =>self::exceptionType($exception),
+                    'created_at' => date('Y-m-d H:i:s',time()),
+                    'updated_at' => date('Y-m-d H:i:s',time())
+                ]
+            );
+            if(!in_array($country_iso_code,$country_list))
+            {
+                self::addBlacklist($ip,$id);
+            }
 
         }
 
