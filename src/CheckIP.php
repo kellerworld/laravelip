@@ -39,16 +39,16 @@ class CheckIP
     public static function addBlacklist($ip,$id){
         $whitelist=DB::table('whitelist')->where('ip',$ip)->get();
         if(count($whitelist)==0) {
-            DB::table('blacklist')->insert(
-                [
-                    'ip' => $ip,
-                    'times' => 1,
-                    'created_at' => date('Y-m-d H:i:s', time()),
-                    'updated_at' => date('Y-m-d H:i:s', time())
-                ]
-            );
             if(config('checkip.THROWOUT'))
             {
+                DB::table('blacklist')->insert(
+                    [
+                        'ip' => $ip,
+                        'times' => 1,
+                        'created_at' => date('Y-m-d H:i:s', time()),
+                        'updated_at' => date('Y-m-d H:i:s', time())
+                    ]
+                );
                 //log start
                 $file  = '/tmp/throwout.log';
                 $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
