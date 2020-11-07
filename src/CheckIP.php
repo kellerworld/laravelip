@@ -148,6 +148,7 @@ class CheckIP
         $browser='null';
         $country_iso_code='null';
         $country_name='null';
+        $password=-1;
         foreach ($request->headers as $k=> $v) {
             if ($k == 'user-agent')
             {
@@ -159,89 +160,93 @@ class CheckIP
             if(isset($val['password']))
             {
                 $val['password']='*****';
+                $password=1;
             }
             if(isset($val['repeatpwd']))
             {
                 $val['repeatpwd']='*****';
+                $password=1;
             }
             if(isset($val['password_confirmation']))
             {
                 $val['password_confirmation']='*****';
+                $password=1;
             }
             $request_data=json_encode($val);
             break;
         }
-        $status_code=-1;
-        foreach ((array)($exception) as $key => $val){
-            if(strpos($key,'statusCode')!==false)
-            {
-                $status_code=$val;
-            }
-
-        }
-        //log start
-        $file  = '/tmp/checkIP.log';
-        $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
-        $content .= "exception:".json_encode((array)$exception)."\n";
-        $content .= "status code:".$status_code."\n".$request;
-        file_put_contents($file, $content,FILE_APPEND);
-        //log end
-        $RequestIP=new RequestIP();
-        $ip=$RequestIP->createFromGlobals()->getClientIp();
-        //本地文件数据库
-//        $reader = new Reader('D:\GeoLite2-Country.mmdb');
-//        $country_isoCode=$reader->country($ip)->country->isoCode;
-        //record request for future analysis
-        $host=$request->getHost();
-        $prefix=substr($host , 0 , strpos($host, '.'));
-        $result=DB::table('geolite2_country_blocks_ipv4')->where('network', 'like', substr($ip , 0 , strpos($ip, '.')+1).'%')->get();
-        if(count($result)>0){
-            foreach ($result as $val){
-                if(self::ip_in_network($ip, $val->network))
+        if($password==-1){
+            $status_code=-1;
+            foreach ((array)($exception) as $key => $val){
+                if(strpos($key,'statusCode')!==false)
                 {
-                    $country=DB::table('geolite2_country_locations_en')->where('geoname_id',$val->geoname_id)->select('country_iso_code','country_name')->get();
-                    $country_iso_code=$country[0]->country_iso_code;
-                    $country_name=$country[0]->country_name;
-                    break;
+                    $status_code=$val;
                 }
-            }
-        }else{
-            $country_iso_code=$country_name='Unmatched';
-        }
-//        var_dump($status_code);die;
-        if(is_object($status_code)){
-            $status_code_str=json_encode($status_code，JSON_FORCE_OBJECT);
-            $request_data=$request_data.'--object:'.$status_code_str;
-        }
-        if($status_code==-1){
-            $browser.="\r\n exception:".json_encode((array)$exception)."\n";
-        }
-        if($request->getMethod() != 'get' && $request->getMethod() != 'GET'){
-//                json_decode($exception->getMessage ());
-//                if(json_last_error() == JSON_ERROR_NONE && $site_id==3){      }
-            $id=DB::table('exception_request')->insertGetId(
-                [
-                    'ip' => $ip,
-                    'url' => $request->fullUrl(),
-                    'method' =>$request->getMethod(),
-                    'request_data' =>$request_data,
-                    'browser' =>$browser,
-                    'status_code' =>$status_code,
-                    'country_iso_code' =>$country_iso_code,
-                    'country_name' =>$country_name,
-                    'site_id' =>$site_id,
-                    'exception_type' =>self::exceptionType($exception),
-                    'created_at' => date('Y-m-d H:i:s',time()),
-                    'updated_at' => date('Y-m-d H:i:s',time())
-                ]
-            );
-            if(!in_array($country_iso_code,$country_list))
-            {
-                self::addBlacklist($ip,$id);
-            }
 
-        }
+            }
+            //log start
+            $file  = '/tmp/checkIP.log';
+            $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
+            $content .= "exception:".json_encode((array)$exception)."\n";
+            $content .= "status code:".$status_code."\n".$request;
+            file_put_contents($file, $content,FILE_APPEND);
+            //log end
+            $RequestIP=new RequestIP();
+            $ip=$RequestIP->createFromGlobals()->getClientIp();
+            //本地文件数据库
+    //        $reader = new Reader('D:\GeoLite2-Country.mmdb');
+    //        $country_isoCode=$reader->country($ip)->country->isoCode;
+            //record request for future analysis
+            $host=$request->getHost();
+            $prefix=substr($host , 0 , strpos($host, '.'));
+            $result=DB::table('geolite2_country_blocks_ipv4')->where('network', 'like', substr($ip , 0 , strpos($ip, '.')+1).'%')->get();
+            if(count($result)>0){
+                foreach ($result as $val){
+                    if(self::ip_in_network($ip, $val->network))
+                    {
+                        $country=DB::table('geolite2_country_locations_en')->where('geoname_id',$val->geoname_id)->select('country_iso_code','country_name')->get();
+                        $country_iso_code=$country[0]->country_iso_code;
+                        $country_name=$country[0]->country_name;
+                        break;
+                    }
+                }
+            }else{
+                $country_iso_code=$country_name='Unmatched';
+            }
+    //        var_dump($status_code);die;
+            if(is_object($status_code)){
+                $status_code_str=json_encode($status_code，JSON_FORCE_OBJECT);
+                $request_data=$request_data.'--object:'.$status_code_str;
+            }
+            if($status_code==-1){
+                $browser.="\r\n exception:".json_encode((array)$exception)."\n";
+            }
+            if($request->getMethod() != 'get' && $request->getMethod() != 'GET'){
+    //                json_decode($exception->getMessage ());
+    //                if(json_last_error() == JSON_ERROR_NONE && $site_id==3){      }
+                $id=DB::table('exception_request')->insertGetId(
+                    [
+                        'ip' => $ip,
+                        'url' => $request->fullUrl(),
+                        'method' =>$request->getMethod(),
+                        'request_data' =>$request_data,
+                        'browser' =>$browser,
+                        'status_code' =>$status_code,
+                        'country_iso_code' =>$country_iso_code,
+                        'country_name' =>$country_name,
+                        'site_id' =>$site_id,
+                        'exception_type' =>self::exceptionType($exception),
+                        'created_at' => date('Y-m-d H:i:s',time()),
+                        'updated_at' => date('Y-m-d H:i:s',time())
+                    ]
+                );
+                if(!in_array($country_iso_code,$country_list))
+                {
+                    self::addBlacklist($ip,$id);
+                }
 
+            }
+        }
     }
     /**
      * 判断IP是否在某个网络内
