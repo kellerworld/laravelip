@@ -240,7 +240,7 @@ class CheckIP
                         'updated_at' => date('Y-m-d H:i:s',time())
                     ]
                 );
-                if(!in_array($country_iso_code,$country_list))
+                if(!in_array($country_iso_code,$country_list) || stristr($request_data,'androxgh0st') !== false)
                 {
                     self::addBlacklist($ip,$id);
                 }
