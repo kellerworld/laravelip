@@ -4,6 +4,7 @@ namespace Kellerworld\Laravelip;
 use Illuminate\Support\Facades\DB;
 use GeoIp2\Database\Reader;
 use Symfony\Component\HttpFoundation\Request as RequestIP;
+use Illuminate\Support\Facades\Auth;
 
 class CheckIP
 {
@@ -15,9 +16,17 @@ class CheckIP
      */
     public static function checkIP()
     {
+//        var_dump(Auth::check());die;
         $RequestIP=new RequestIP();
+//        var_dump($RequestIP);die;
         $ip=$RequestIP->createFromGlobals()->getClientIp();
         $list = DB::table('blacklist')->where('ip', $ip)->get();
+        if(Auth::check() == false) {
+            $CountryInfo=self::GetCountryName($ip);
+//            var_dump($CountryInfo);die;
+            $country_name=$CountryInfo['country_name'];
+            self::CheckUserAgent($ip,$country_name);
+        }
 
         if (count($list) != 0) {
             //---------throw a exception
@@ -31,7 +40,6 @@ class CheckIP
 
             throw new Exception('package report:ip is in blacklist.');
         }
-
     }
     /*
      * self::addBlacklist($ip);
@@ -194,36 +202,30 @@ class CheckIP
             $RequestIP=new RequestIP();
             $ip=$RequestIP->createFromGlobals()->getClientIp();
             //本地文件数据库
-    //        $reader = new Reader('D:\GeoLite2-Country.mmdb');
-    //        $country_isoCode=$reader->country($ip)->country->isoCode;
+            //        $reader = new Reader('D:\GeoLite2-Country.mmdb');
+            //        $country_isoCode=$reader->country($ip)->country->isoCode;
             //record request for future analysis
             $host=$request->getHost();
             $prefix=substr($host , 0 , strpos($host, '.'));
-            $result=DB::table('geolite2_country_blocks_ipv4')->where('network', 'like', substr($ip , 0 , strpos($ip, '.')+1).'%')->get();
-            if(count($result)>0){
-                foreach ($result as $val){
-                    if(self::ip_in_network($ip, $val->network))
-                    {
-                        $country=DB::table('geolite2_country_locations_en')->where('geoname_id',$val->geoname_id)->select('country_iso_code','country_name')->get();
-                        $country_iso_code=$country[0]->country_iso_code;
-                        $country_name=$country[0]->country_name;
-                        break;
-                    }
-                }
-            }else{
-                $country_iso_code=$country_name='Unmatched';
-            }
-    //        var_dump($status_code);die;
+            $CountryInfo=self::GetCountryName($ip);
+//            var_dump($CountryInfo);die;
+            $country_name=$CountryInfo['country_name'];
+            $country_iso_code=$CountryInfo['country_iso_code'];
+            //        var_dump($status_code);die;
             if(is_object($status_code)){
                 $status_code_str=json_encode($status_code，JSON_FORCE_OBJECT);
                 $request_data=$request_data.'--object:'.$status_code_str;
+            }else{
+                if($status_code == 401){
+                    self::CheckUserAgent($ip,$country_name);
+                }
             }
             if($status_code==-1){
                 $browser.="\r\n exception:".json_encode((array)$exception)."\n";
             }
             if($request->getMethod() != 'get' && $request->getMethod() != 'GET'){
-    //                json_decode($exception->getMessage ());
-    //                if(json_last_error() == JSON_ERROR_NONE && $site_id==3){      }
+                //                json_decode($exception->getMessage ());
+                //                if(json_last_error() == JSON_ERROR_NONE && $site_id==3){      }
                 $id=DB::table('exception_request')->insertGetId(
                     [
                         'ip' => $ip,
@@ -268,6 +270,70 @@ class CheckIP
             return true;
         }
         return false;
+    }
+
+    public static function GetCountryName($ip)
+    {
+        $result=DB::table('geolite2_country_blocks_ipv4')->where('network', 'like', substr($ip , 0 , strpos($ip, '.')+1).'%')->get();
+        if(count($result)>0){
+            foreach ($result as $val){
+                if(self::ip_in_network($ip, $val->network))
+                {
+                    $country=DB::table('geolite2_country_locations_en')->where('geoname_id',$val->geoname_id)->select('country_iso_code','country_name')->get();
+                    $data['country_iso_code']=$country[0]->country_iso_code;
+                    $data['country_name']=$country[0]->country_name;
+                    break;
+                }
+            }
+        }else{
+            $data['country_iso_code']=$data['country_name']='Unmatched';
+        }
+        return $data;
+    }
+    public static function CheckUserAgent($ip,$country_name)
+    {
+//        var_dump(Auth::check());die;
+
+        //检查是否过期token
+
+        $ua_arr=[
+            "Safari",
+            "Opera",
+            "Firefox",
+            "Chrome",
+            "Trident",
+            "360SE",
+            "QQBrowser",
+            "UBrowser",
+            "The World",
+            "compatible; MSIE",
+            "TencentTraveler",
+            "Avant Browser",
+            "Amazon Simple Notification Service Agent",
+            "UCWEB"
+        ];
+        $status=0;
+        foreach($ua_arr as $key => $val){
+            if($status==0){
+                if(strpos($_SERVER['HTTP_USER_AGENT'],$val) !== false){
+                    //如果包含
+                    $status++;
+                }
+            }
+        }
+//        var_dump($status);die;
+        if($status==0){
+            //log start
+            $file  = '/tmp/CheckUserAgent.log';
+            $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
+            $content .= "SiteID:".config('checkip.site_id')."\r\n";
+            $content .= "USER_AGENT:".$_SERVER['HTTP_USER_AGENT']."\r\n";
+            $content .= "IP:".$ip."\n";
+            $content .= "Country Name:".$country_name."\r\n";
+            file_put_contents($file, $content,FILE_APPEND);
+            //log end
+        }
+//            var_dump($_SERVER['HTTP_USER_AGENT']);die;
     }
 }
 
