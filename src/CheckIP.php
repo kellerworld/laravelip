@@ -310,6 +310,8 @@ class CheckIP
             "TencentTraveler",
             "Avant Browser",
             "Amazon Simple Notification Service Agent",
+            "Mozilla",
+            "Go-http-client/1.1",
             "UCWEB"
         ];
         $status=0;
