@@ -315,6 +315,9 @@ class CheckIP
             "UCWEB"
         ];
         $status=0;
+        if(!isset($_SERVER['HTTP_USER_AGENT'])){
+            $_SERVER['HTTP_USER_AGENT']=='undefined';
+        }
         foreach($ua_arr as $key => $val){
             if($status==0){
                 if(strpos($_SERVER['HTTP_USER_AGENT'],$val) !== false){
