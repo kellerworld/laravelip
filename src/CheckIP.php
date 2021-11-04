@@ -16,29 +16,33 @@ class CheckIP
      */
     public static function checkIP()
     {
-//        var_dump(Auth::check());die;
         $RequestIP=new RequestIP();
 //        var_dump($RequestIP);die;
         $ip=$RequestIP->createFromGlobals()->getClientIp();
-        $list = DB::table('blacklist')->where('ip', $ip)->get();
+//        var_dump(Auth::check());die;
         if(Auth::check() == false) {
             $CountryInfo=self::GetCountryName($ip);
 //            var_dump($CountryInfo);die;
             $country_name=$CountryInfo['country_name'];
             self::CheckUserAgent($ip,$country_name);
         }
+        $whitelist=DB::table('whitelist')->where('ip',$ip)->get();
+        if(count($whitelist)==0) {
+            $list = DB::table('blacklist')->where('ip', $ip)->get();
+            if (count($list) != 0) {
+                //---------throw a exception
+                DB::table('blacklist')->where('ip', $ip)->increment('times');
+                //log start
+                $file = '/tmp/throwout'. date("Y-m-d", time()) .'.log';
+                $content = "++++++++++++\r\n";
+                $content .= "-----" . date("Y-m-d H:i:s", time()) . "----\r\n";
+                $content .= "-----" . $ip . "----\r\n";
+                $content .= "SiteID:" . config('checkip.site_id') . "\n";
+                file_put_contents($file, $content, FILE_APPEND);
+                //log end
 
-        if (count($list) != 0) {
-            //---------throw a exception
-            DB::table('blacklist')->where('ip',$ip)->increment('times');
-            //log start
-            $file  = '/tmp/throwout.log';
-            $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
-            $content .= "SiteID:".config('checkip.site_id')."\n";
-            file_put_contents($file, $content,FILE_APPEND);
-            //log end
-
-            throw new Exception('package report:ip is in blacklist.');
+                throw new Exception('package report:ip is in blacklist.');
+            }
         }
     }
     /*
@@ -58,10 +62,12 @@ class CheckIP
                     ]
                 );
                 //log start
-                $file  = '/tmp/throwout.log';
-                $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
-                $content .= "addBlacklist():true----SiteID:".config('checkip.site_id')."\n";
-                file_put_contents($file, $content,FILE_APPEND);
+                $file = '/tmp/throwout'. date("Y-m-d", time()) .'.log';
+                $content = "++++++++++++\r\n";
+                $content .= "-----" . date("Y-m-d H:i:s", time()) . "----\r\n";
+                $content .= "-----" . $ip . "----\r\n";
+                $content .= "SiteID:" . config('checkip.site_id') . "\n";
+                file_put_contents($file, $content, FILE_APPEND);
                 //log end
                 throw new Exception('package report:ip black.');
             }else{
@@ -69,10 +75,12 @@ class CheckIP
                     ->where('id', $id)
                     ->update(['status' => 1]);
                 //log start
-                $file  = '/tmp/throwout.log';
-                $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
-                $content .= "addBlacklist():false----SiteID:".config('checkip.site_id')."\n";
-                file_put_contents($file, $content,FILE_APPEND);
+                $file = '/tmp/throwout'. date("Y-m-d", time()) .'.log';
+                $content = "++++++++++++\r\n";
+                $content .= "-----" . date("Y-m-d H:i:s", time()) . "----\r\n";
+                $content .= "-----" . $ip . "----\r\n";
+                $content .= "SiteID:" . config('checkip.site_id') . "\n";
+                file_put_contents($file, $content, FILE_APPEND);
                 //log end
             }
         }
@@ -148,105 +156,135 @@ class CheckIP
      * 当遇到exception时，检查ip是否属于美国
      * 属于，则放行
      * 否则，加黑名单，并记录
+     * 不记录get传输方式的访问记录
+     * 如果url中包含指定字符串包含,则不作记录
+     * 如果request_data中包含指定字符串，则不作记录
+     * 如果提交的数据中包含密码字段，则不作记录
      */
     public static function isNonUS($request,$exception){
-        self::checkIP();
-        $site_id=config('checkip.site_id');
-        $country_list=explode(',',config('checkip.country_list'));
-        $browser='null';
-        $country_iso_code='null';
-        $country_name='null';
-        $password=-1;
-        foreach ($request->headers as $k=> $v) {
-            if ($k == 'user-agent')
-            {
-                $browser = $v[0];
+        if(strpos($request->fullUrl(),'https://user.happymangocredit.com/api/v1') !== false){
+            //如果url中包含指定字符串包含,则不作记录
+        }
+        else{
+            self::checkIP();
+            $site_id=config('checkip.site_id');
+            $country_list=explode(',',config('checkip.country_list'));
+            $browser='null';
+            $country_iso_code='null';
+            $country_name='null';
+            $password=-1;
+            foreach ($request->headers as $k=> $v) {
+                if ($k == 'user-agent')
+                {
+                    $browser = $v[0];
+                    break;
+                }
+            }
+            foreach ((array)($request->request) as $key => $val){
+                if(isset($val['password']))
+                {
+                    $val['password']='*****';
+                    $password=1;
+                }
+                if(isset($val['repeatpwd']))
+                {
+                    $val['repeatpwd']='*****';
+                    $password=1;
+                }
+                if(isset($val['password_confirmation']))
+                {
+                    $val['password_confirmation']='*****';
+                    $password=1;
+                }
+                $request_data=json_encode($val);
                 break;
             }
-        }
-        foreach ((array)($request->request) as $key => $val){
-            if(isset($val['password']))
-            {
-                $val['password']='*****';
-                $password=1;
-            }
-            if(isset($val['repeatpwd']))
-            {
-                $val['repeatpwd']='*****';
-                $password=1;
-            }
-            if(isset($val['password_confirmation']))
-            {
-                $val['password_confirmation']='*****';
-                $password=1;
-            }
-            $request_data=json_encode($val);
-            break;
-        }
-        if($password==-1){
-            $status_code=-1;
-            foreach ((array)($exception) as $key => $val){
-                if(strpos($key,'statusCode')!==false)
-                {
-                    $status_code=$val;
-                }
+            //如果提交的数据中包含密码字段，则不拦截
+            if($password==-1){
+                $status_code=-1;
+                foreach ((array)($exception) as $key => $val){
+                    if(strpos($key,'statusCode')!==false)
+                    {
+                        $status_code=$val;
+                    }
 
-            }
-            //log start
-            $file  = '/tmp/checkIP.log';
-            $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
-            $content .= "exception:".json_encode((array)$exception)."\n";
-            $content .= "status code:".$status_code."\n".$request;
-            file_put_contents($file, $content,FILE_APPEND);
-            //log end
-            $RequestIP=new RequestIP();
-            $ip=$RequestIP->createFromGlobals()->getClientIp();
-            //本地文件数据库
-            //        $reader = new Reader('D:\GeoLite2-Country.mmdb');
-            //        $country_isoCode=$reader->country($ip)->country->isoCode;
-            //record request for future analysis
-            $host=$request->getHost();
-            $prefix=substr($host , 0 , strpos($host, '.'));
-            $CountryInfo=self::GetCountryName($ip);
+                }
+                //log start
+                $file = '/tmp/checkIP'. date("Y-m-d", time()) .'.log';
+                $content = "++++++isNonUS++++++\r\n";
+                $content .= "-----" . date("Y-m-d H:i:s", time()) . "----\r\n";
+                $content .= "SiteID:" . config('checkip.site_id') . "\r\n";
+
+                $content .= "exception:".json_encode((array)$exception)."\r\n";
+                $content .= "status code:".$status_code."\r\n".$request;
+                file_put_contents($file, $content,FILE_APPEND);
+                //log end
+                $RequestIP=new RequestIP();
+                $ip=$RequestIP->createFromGlobals()->getClientIp();
+                //本地文件数据库
+                //        $reader = new Reader('D:\GeoLite2-Country.mmdb');
+                //        $country_isoCode=$reader->country($ip)->country->isoCode;
+                //record request for future analysis
+                $host=$request->getHost();
+                $prefix=substr($host , 0 , strpos($host, '.'));
+                $CountryInfo=self::GetCountryName($ip);
 //            var_dump($CountryInfo);die;
-            $country_name=$CountryInfo['country_name'];
-            $country_iso_code=$CountryInfo['country_iso_code'];
-            //        var_dump($status_code);die;
-            if(is_object($status_code)){
-                $status_code_str=json_encode($status_code，JSON_FORCE_OBJECT);
-                $request_data=$request_data.'--object:'.$status_code_str;
-            }else{
-                if($status_code == 401){
-                    self::CheckUserAgent($ip,$country_name);
+                $country_name=$CountryInfo['country_name'];
+                $country_iso_code=$CountryInfo['country_iso_code'];
+                //        var_dump($status_code);die;
+                if(is_object($status_code)){
+                    $status_code_str=json_encode($status_code，JSON_FORCE_OBJECT);
+                    $request_data=$request_data.'--object:'.$status_code_str;
+                }else{
+                    if($status_code == 401){
+                        self::CheckUserAgent($ip,$country_name);
+                    }
                 }
-            }
-            if($status_code==-1){
-                $browser.="\r\n exception:".json_encode((array)$exception)."\n";
-            }
-            if($request->getMethod() != 'get' && $request->getMethod() != 'GET'){
-                //                json_decode($exception->getMessage ());
-                //                if(json_last_error() == JSON_ERROR_NONE && $site_id==3){      }
-                $id=DB::table('exception_request')->insertGetId(
-                    [
-                        'ip' => $ip,
-                        'url' => $request->fullUrl(),
-                        'method' =>$request->getMethod(),
-                        'request_data' =>$request_data,
-                        'browser' =>$browser,
-                        'status_code' =>$status_code,
-                        'country_iso_code' =>$country_iso_code,
-                        'country_name' =>$country_name,
-                        'site_id' =>$site_id,
-                        'exception_type' =>self::exceptionType($exception),
-                        'created_at' => date('Y-m-d H:i:s',time()),
-                        'updated_at' => date('Y-m-d H:i:s',time())
-                    ]
-                );
-                if(!in_array($country_iso_code,$country_list) || stristr($request_data,'androxgh0st') !== false)
-                {
-                    self::addBlacklist($ip,$id);
+                if($status_code==-1){
+                    $browser.="\r\n exception:".json_encode((array)$exception)."\n";
                 }
-
+                //如果传输方式不是GET，则可能记录、加黑名单;
+                if($request->getMethod() != 'get' && $request->getMethod() != 'GET'){
+                    //                json_decode($exception->getMessage ());
+                    //                if(json_last_error() == JSON_ERROR_NONE && $site_id==3){      }
+                    $status=0;
+                    $str_arr=[
+                        '"key":"page.login',
+                        '"key":"page.si'
+                    ];
+                    foreach($str_arr as $key => $val){
+                        if($status==0){
+                            if(strpos($request_data,$val) !== false){
+                                //如果包含
+                                $status++;
+                            }
+                        }
+                    }
+                    //如果request_data中包含指定字符串，则不记录、不加黑名单
+                    if($status==0){
+                        $id=DB::table('exception_request')->insertGetId(
+                            [
+                                'ip' => $ip,
+                                'url' => $request->fullUrl(),
+                                'method' =>$request->getMethod(),
+                                'request_data' =>$request_data,
+                                'browser' =>$browser,
+                                'status_code' =>$status_code,
+                                'country_iso_code' =>$country_iso_code,
+                                'country_name' =>$country_name,
+                                'site_id' =>$site_id,
+                                'exception_type' =>self::exceptionType($exception),
+                                'created_at' => date('Y-m-d H:i:s',time()),
+                                'updated_at' => date('Y-m-d H:i:s',time())
+                            ]
+                        );
+                        //如果不在白名单国家或者如果字符串包含**，则加入黑名单
+                        if(!in_array($country_iso_code,$country_list) || stristr($request_data,'{"0x":') !== false || stristr($request->fullUrl(),'/.env') !== false)
+                        {
+                            self::addBlacklist($ip,$id);
+                        }
+                    }
+                }
             }
         }
     }
@@ -329,11 +367,11 @@ class CheckIP
 //        var_dump($status);die;
         if($status==0){
             //log start
-            $file  = '/tmp/CheckUserAgent.log';
+            $file  = '/tmp/CheckUserAgent'. date("Y-m-d", time()) .'.log';
             $content = "-----".date("Y-m-d H:i:s",time())."----\r\n";
             $content .= "SiteID:".config('checkip.site_id')."\r\n";
             $content .= "USER_AGENT:".$_SERVER['HTTP_USER_AGENT']."\r\n";
-            $content .= "IP:".$ip."\n";
+            $content .= "IP:".$ip."\r\n";
             $content .= "Country Name:".$country_name."\r\n";
             file_put_contents($file, $content,FILE_APPEND);
             //log end
