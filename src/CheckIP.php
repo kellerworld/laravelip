@@ -24,7 +24,7 @@ class CheckIP
             $CountryInfo=self::GetCountryName($ip);
 //            var_dump($CountryInfo);die;
             $country_name=$CountryInfo['country_name'];
-            self::CheckUserAgent($ip,$country_name);
+            self::CheckUserAgent($ip,$country_name.'_AuthFalse');
         }
         $whitelist=DB::table('whitelist')->where('ip',$ip)->get();
         if(count($whitelist)==0) {
@@ -237,7 +237,7 @@ class CheckIP
                     $request_data=$request_data.'--object:'.$status_code_str;
                 }else{
                     if($status_code == 401){
-                        self::CheckUserAgent($ip,$country_name);
+                        self::CheckUserAgent($ip,$country_name.'_401');
                     }
                 }
                 if($status_code==-1){
@@ -279,9 +279,10 @@ class CheckIP
                             ]
                         );
                         //如果不在白名单国家或者如果字符串包含**，则加入黑名单
-                        if(!in_array($country_iso_code,$country_list) || stristr($request_data,'{"0x":') !== false || stristr($request->fullUrl(),'/.env') !== false)
+                        if(!in_array($country_iso_code,$country_list) || stristr($request_data,'{"0x":["') !== false || stristr($request->fullUrl(),'/.env') !== false)
                         {
                             self::addBlacklist($ip,$id);
+                            self::CheckUserAgent($ip,$country_name.'_blacklist');
                         }
                     }
                 }
