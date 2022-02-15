@@ -162,7 +162,7 @@ class CheckIP
      * 如果提交的数据中包含密码字段，则不作记录
      */
     public static function isNonUS($request,$exception){
-        if(strpos($request->fullUrl(),'https://user.happymangocredit.com/api/v1') !== false){
+        if(strpos($request->fullUrl(),'https://user.happymangocredit.com/api/v1') !== false || strpos($request->fullUrl(),'https://user.happymangocredit.com/api/v2') !== false){
             //如果url中包含指定字符串包含,则不作记录
         }
         else{
